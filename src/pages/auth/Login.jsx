@@ -1,9 +1,16 @@
-import { useState } from "react";
+import service from "../../services/config.js";
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/auth.context.jsx"
 
 function Login() {
 
+  const navigate = useNavigate()
+  const { authenticateUser } = useContext(AuthContext)
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("")
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
@@ -12,6 +19,32 @@ function Login() {
     e.preventDefault();
 
     // ... contactar al backend para validar credenciales de usuario aqui
+    try {
+
+      const userCredentials = {
+        email,
+        password
+      }
+      
+      // const response = await axios.post("http://localhost:5005/api/auth/login", userCredentials)
+      const response = await service.post("/auth/login", userCredentials)
+
+      console.log(response)
+
+      localStorage.setItem("authToken", response.data.authToken)
+
+      await authenticateUser()
+
+      navigate("/private-page-example")
+
+    } catch (error) {
+      console.log(error)
+      if (error.response.status === 400) {
+        setErrorMessage(error.response.data.message)
+      } else {
+        //! aqui deberia haber redirección a /error
+      }
+    }
   };
 
   return (
@@ -41,6 +74,9 @@ function Login() {
         <br />
 
         <button type="submit">Acceder</button>
+
+        {errorMessage && <p>{errorMessage}</p>}
+
       </form>
       
     </div>
